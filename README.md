@@ -1,112 +1,87 @@
 # Oasis Circuit Sim
 
-A browser racing sim of the **Oasis / Inner Circuit at Bahrain International Circuit** (2.550 km, 8 turns). It's a single page with a top-down 2D canvas, written in vanilla HTML/CSS/JS. There is no build step and nothing to install.
+A top-down racing game on the **Oasis / Inner Circuit at Bahrain International Circuit** (2.55 km, 11 turns). It's a single `index.html` page written in vanilla HTML/CSS/JS, with no build step and nothing to install.
 
-**Run it:** open `index.html` in a browser. It works from `file://`.
+**Run it:** open `index.html` in a browser. It also works from `file://`.
 
-## What's in it
+## Modes
 
-**Cars.** There are four cars. Each has its own physics parameters, not just a different skin:
+- **Race.** You against the other three cars over 3, 5 or 10 laps.
+  - You start fourth on the grid, with a five-light start.
+  - The AI rivals follow cars ahead, look for a way past and give room alongside.
+  - Light rubber-banding keeps races close.
+  - Cars make contact, walls bounce you back onto the track, and the race ends with a results screen (and confetti if you win).
+- **Time Trial.** Hot laps against a ghost of your best lap, with sector splits and a live delta. Each car has gold, silver and bronze medal times, derived from that car's own ideal lap.
+- **Watch AI.** The AI drives your car for a qualifying lap or a race stint, with lap-to-lap variance and tyre wear. It shows live deltas to 1:15.8 (front-runner quali), 1:18.0 (front-runner race average) and your target time. Speeds run from 1× to 20×, or you can finish instantly.
+- **Compare.** Runs an AI lap in every car and overlays their racing lines and speed traces.
+
+## Difficulty
+
+- **Easy (default).** A forgiving arcade car, with extra grip, quick steering and strong brakes.
+  - Steering picks a line the tyres can actually hold, with automatic countersteer, traction control and auto-shift.
+  - **Brake assist** slows you for each corner.
+  - The **racing line** ahead of you is coloured green (accelerate), yellow (lift or carry speed) or red (brake now).
+- **Pro.** The raw simulation: power understeer in the FWD cars, throttle oversteer in the 135i, lift-off rotation, and E/Q for manual gears.
+
+Brake assist and the racing line can be switched on or off in either mode.
+
+## Controls
+
+- Arrows or WASD drive. Shift + throttle gives half throttle, for feeling the turbo lag.
+- Keys: Esc pause, V camera (chase, follow, overview), L racing line, R back on track, N night, O sound.
+- Gamepad: left stick, RT and LT, RB and LB to shift, Start to pause.
+- Phones get on-screen buttons.
+- In the garage, ← and → change car and Enter starts.
+
+## The cars
+
+Each car is drawn top-down at its real length and width, with its own details: the Scirocco's wide rear and light bar, the FN2 Civic's long windscreen, roof spoiler and triangle tail lights, the 135i's long bonnet, kidney grille and set-back cabin, and the TT's dome roof and round fuel cap. Each comes in five factory paint colours.
 
 | | Layout | Box | Mass | Power | Weight F/R | Character |
 |---|---|---|---|---|---|---|
-| VW Scirocco 2.0 TSI | FWD | DSG | 1300 kg | 265 whp | 61/39 | Stable on the brakes; understeers on power; exits limited by front traction |
-| Honda Civic 2.0 NA | FWD | 6MT | 1200 kg | 255 whp | 61/39 | Stiff front tyre and fast rack for the sharpest turn-in; no turbo lag, but little low-down torque |
-| BMW 135i N54 | RWD | 6MT | 1450 kg | 245 whp | 52/48 | Wider rear tyres give good exit traction; steps out under aggressive throttle; lag on part-throttle |
-| Audi TT 2.0 TFSI | FWD | DSG | 1250 kg | 262 whp | 60/40 | Scirocco-like but lighter on a shorter wheelbase, so it rotates more on the brakes |
+| VW Scirocco 2.0 TSI | FWD | DSG | 1300 kg | 265 whp | 61/39 | Stable, understeers on power, near-instant shifts |
+| Honda Civic 2.0 NA | FWD | 6MT | 1200 kg | 255 whp | 61/39 | Sharpest turn-in, no turbo lag, little low-down torque |
+| BMW 135i N54 | RWD | 6MT | 1450 kg | 245 whp | 52/48 | Good exit traction, steps out under aggressive throttle, part-throttle lag |
+| Audi TT 2.0 TFSI | FWD | DSG | 1250 kg | 262 whp | 60/40 | Scirocco-like, lighter and more willing to rotate |
 
-**Drive mode.**
-- Handling: **Arcade** (default) or **Simulation**, chosen in the menu. Arcade steering picks a path the tyres can actually hold, with automatic countersteer, stability and traction control, 25% more grip and auto-shift. Each car keeps its character: turbo lag, weight, and FWD push vs RWD rotation. Simulation is the raw physics: power understeer, lift-off snaps and manual gears. Best laps are kept separately per mode.
-- Start: a five-light start sequence on the grid. You can rev the engine while you wait.
-- Pit lane: turn in after T8. A 60 km/h limiter engages automatically. Stop in your lit box for an animated tyre change: crew run out, jacks up, four wheel guns, tyres swapped, jacks down, lollipop up. You leave on fresh tyres, and the stationary time is shown. In Arcade the car guides itself onto the marks.
-- Controls: arrows or WASD. Shift + throttle gives half throttle, for feeling the turbo lag.
-- Gears: E/Q shift the manual cars, M toggles auto-shift, and DSG cars always shift themselves.
-- Other keys: T traction control, G ghost, R reset, V camera, L racing line, N day/night, O sound on/off, P pause, Esc menu. A gamepad also works.
-- HUD: speed, gear, RPM, boost, throttle/brake, lap time, live delta to best, and sector splits. Sectors turn purple when they beat your best.
-- Tyres: front/rear temperature and wear.
-- Track limits: the lap is invalidated when all four wheels leave the track.
-- Best lap per car is saved in `localStorage`, together with a ghost replay.
+## Track, pits and scenery
 
-**Simulate mode.**
-- The AI drives the full physics model on a racing line and speed profile computed for that car.
-- Sessions: a qualifying lap, or a race stint of N laps. Each lap gets a small random pace and braking-point variance, and tyre wear and temperature build up.
-- Live readouts: lap time, sector splits, and deltas to 1:15.8 (front-runner quali), 1:18.0 (front-runner race average) and your target time.
-- A lap table and a stint summary show best, average, spread and tyre fall-off.
-- Speed controls: 1× / 2× / 5× / 20×, or "Finish instantly".
+- **Track:** traced from the official BIC map of the Inner layout. The start/finish straight runs north–south on the west side, then comes the T1 hairpin, the long T2–T3 diagonal, T4–T5, the T6 hairpin, T7–T8, the T9 hairpin and T10–T11 back onto the straight. Each map vertex is filleted with a corner radius and the loop is scaled to 2,550 m. The track is 15 m wide.
+- **Pit lane:** alongside the main straight, behind a pit wall, with a 60 km/h limiter. Stop in your box for an animated tyre change: crew, jacks, four wheel guns and the lollipop.
+- **Scenery:** the Sakhir Tower, main and corner grandstands with crowds, the paddock, palm groves and an oasis pond, floodlight towers, car parks and asphalt run-off with walls. There's also a day/night switch.
 
-**Compare all cars.** Runs an AI qualifying lap in each car. It shows every car's racing line on the map (scroll to zoom, drag to pan) and a speed-vs-distance chart with hover readout. A table lists minimum and exit speed at each corner. "Re-optimise lines" re-runs the line optimiser live in the browser; it takes about a minute.
+## Sound
 
-**Scenery.** Desert ground, asphalt run-off with Bahrain's painted strips, and walls. Around the track: the pit lane, pit wall and garages; the Sakhir Tower behind the pits; the main grandstand with its fabric sail roofs and crowd; grandstands at T1 and T4; the paddock with hospitality units and transporters; palm groves and an oasis pond in the infield; floodlight towers; car parks; the perimeter road; and the start gantry.
+Everything is synthesized live with the Web Audio API, with no samples.
 
-**Sound.** Everything is synthesized live with the Web Audio API, with no samples:
-- Engine: each cylinder fires a pressure pulse into two resonant exhaust pipes, a muffler that opens with load, an intake resonator and a rasp path. It runs in an AudioWorklet, with a ScriptProcessor fallback.
-- Per-car voices: the EA888 turbo four (Scirocco, TT) with DSG upshift crack; the high-revving Civic, which gets louder and brighter above 5,800 rpm (VTEC); and the smoother, deeper straight-six 135i with twin-turbo whistle and flutter.
-- Car effects: turbo whistle and blow-off, overrun pops, rev limiter, tyre squeal and understeer scrub, wind, road, kerb rumble, gravel and gearbox whine.
-- Pit and trackside: wheel guns, jacks, the limiter beep, crowd swelling near the grandstands, start-light and lap chimes.
-- Mix: a compressor, plus a convolution reverb that opens up in the pit lane.
+- **Engine:** each cylinder fires a pulse through resonant exhaust pipes, a muffler that opens with load, an intake resonator and a rasp path. It runs in an AudioWorklet, with a ScriptProcessor fallback.
+- **Per-car voices:** the turbo four with DSG upshift crack (Scirocco, TT); the Civic, which gets louder and brighter above 5,800 rpm (VTEC); and the straight-six with twin-turbo whistle and flutter (135i).
+- **Effects:** blow-off, overrun pops, tyre squeal, wind, kerbs, gravel, impacts and scrapes, pit wheel guns and jacks, crowd, start lights and lap chimes.
 
-**Extras.** Ghost of your best lap, day/night (floodlights, headlights, lit garages), tyre wear across a stint, and skid marks.
+## Under the hood
 
-## Physics (simplified, directionally honest)
-
-- **Chassis:** a bicycle model (vx, vy, yaw rate) integrated at 240 Hz.
-- **Weight transfer:** longitudinal transfer from CG height and wheelbase, lagged through the suspension, sets each axle's normal load.
-- **Tyres:**
-  - Grip per axle follows a Pacejka-style curve with load sensitivity.
-  - Cornering stiffness grows less than linearly with load, which gives front-heavy cars their natural understeer.
-  - Each axle has a friction ellipse. Drive or brake force shrinks the lateral grip left over, and past the limit the tyre spins or locks and lateral grip collapses.
-  - This is what makes FWD cars push wide under power, the RWD 135i step out on throttle, and trail braking rotate the car.
-- **Brakes:** fixed bias per car. ABS on the fronts, and EBD proportioning keeps the rears below their limit.
-- **Engine:**
-  - Torque curves are scaled so peak wheel power matches each car's WHP.
-  - Turbo cars build boost with a first-order spool-up lag whose time constant grows at low rpm and at part throttle.
-  - The model also covers engine braking, the rev limiter and launch clutch slip.
-- **Gearboxes:** DSG shifts are near-instant with a small torque dip. The manual cars lose drive for about 0.16 to 0.22 s per shift.
-- **Tyre temperature and wear:** both are driven by sliding power (lateral slip × force, plus wheelspin) and cooled by airflow. Grip peaks around 95 °C. Wear speeds up when the tyres overheat and costs grip late in a stint.
-
-## AI, racing line and speed profile
-
-1. **Skidpad calibration.** Each car is driven on virtual 30/45/60 m circles in the full physics model to measure its real lateral limit.
-2. **Speed profile.** A quasi-steady-state forward/backward pass along the line. It uses the car's per-axle friction ellipse with weight transfer, its engine force curve and brake bias, and three extra limits:
-   - Braking may only go as hard as still leaves the unloaded rear axle its share of cornering grip.
-   - A lateral-jerk limit (v³·dκ/ds) accounts for how quickly each car can change direction.
-   - The traction limit on the driven axle is what separates FWD from RWD on exits.
-3. **Racing line.** Start from the geometric minimum-curvature line, then minimise that car's own lap time with coordinate descent on wide, smooth deformations around each corner (`Core.lineOptimiser`).
-   - The results are embedded in the `BIC_PRECOMPUTED` block so the page opens instantly.
-   - The 135i's line ends up as much as about 1.8 m away from the FWD cars' lines. It carries different entry, minimum and exit speeds; the Compare view shows the details.
-4. **Driver.** Path tracking uses course and lateral error feeding commanded curvature, with yaw-rate PI control on top. Speed control uses braking feed-forward from the profile. The AI also has these skills:
-   - It feels the front tyres and won't brake beyond the friction ellipse.
-   - It trails off the brakes when the rear is loaded, won't steer past the fronts' peak slip angle, and countersteers.
-   - It modulates throttle on the driven axle's traction. The 135i lifts when the rear steps out, while the FWD cars keep a little throttle in.
-   - A "marshal" resets the car after a big excursion; that lap is invalid.
-
-With the current tuning, AI qualifying laps (100% pace) come out at about 1:14.8 to 1:15.9 for all four cars. At 99% pace, race stints average about 1:14.9 to 1:15.9, with tyre fall-off over the stint.
-
-## Track
-
-The layout is reconstructed as a clockwise sequence of straights and constant-radius arcs:
-
-- Start/finish straight → T1 hairpin (R) → T2 (L) → T3 (R) → back straight → T4 (R) → infield link T5 (R), T6 (L), T7 (R) → T8 (R) onto the main straight.
-- The two long straights are solved so the loop closes exactly, then the whole thing is scaled to 2,550 m. The track is 15 m wide.
-- The pit lane runs on the inside of the start/finish straight, from after T8 to before T1, behind a pit wall.
-- Corner radii and straight lengths are approximations based on public track maps. No survey data was available, so treat the geometry as a close sketch rather than CAD.
+- **Physics:**
+  - A bicycle model at 240 Hz, with longitudinal weight transfer and load-sensitive tyres.
+  - A per-axle friction ellipse, which makes the FWD cars push on power and lets the 135i step out.
+  - Rear ABS/EBD that accounts for cornering load.
+  - Turbo spool lag that depends on rpm and throttle.
+  - Tyre temperature and wear.
+- **AI:** each car's racing line is optimised for its own lap time (`Core.lineOptimiser`, pre-computed in the `BIC_PRECOMPUTED` block). The speed profile is limited by grip, weight transfer, drive layout, power and lateral jerk. The driver uses path tracking with yaw-rate control, braking feed-forward and throttle discipline.
+- **Lap times:** AI qualifying laps are about 1:16.6–1:18.5 in the simulation physics, and race stints average about 1:17.3–1:19.1.
 
 ## Tests (Node, headless)
 
-The simulation core runs without a DOM. The test loader pulls it out of `index.html`:
-
 ```sh
-node test/behaviour.js    # FWD power-on understeer, RWD throttle oversteer, turbo lag, trail-brake rotation, weight transfer, lap-time window
-node test/lap-check.js    # AI quali lap + race stint per car: line-tracking error, off-track time, wear
-node test/precompute.js scirocco   # re-run the line optimiser offline; prints JSON for the BIC_PRECOMPUTED block
+node test/behaviour.js    # FWD power understeer, RWD throttle oversteer, turbo lag, trail-brake rotation, weight transfer, lap times
+node test/lap-check.js    # AI qualifying lap + race stint per car: line tracking, off-track time, tyre wear
+node test/precompute.js scirocco   # re-run the line optimiser; prints JSON for the BIC_PRECOMPUTED block
 ```
-
-If you change car parameters, re-run `precompute.js` for each car and paste the output into the `BIC_PRECOMPUTED` script block. Alternatively, press "Re-optimise lines" in the Compare view.
 
 ## Code layout (all in `index.html`)
 
-- `<script id="precomputed">`: per-car racing-line offsets and skidpad calibration.
-- `<script id="core">`: the track, cars, physics step, speed profile, line optimiser, AI driver, lap timer and headless `simulate()`. It has no DOM access.
-- `<script id="audio">`: the synthesized sound engine.
-- `<script id="scenery">`: everything drawn around the circuit.
-- `<script id="ui">`: canvas rendering, input, arcade assists, the pit stop, the HUD, the drive, sim and compare sessions, and `localStorage` persistence.
+- `precomputed`: racing lines and skidpad calibration.
+- `core`: the track, cars, physics, speed planner, line optimiser, AI, lap timer and headless `simulate()`. It has no DOM access.
+- `audio`: the sound engine.
+- `scenery`: everything drawn around the circuit.
+- `cars`: the top-down car drawings.
+- `ui`: the garage, game modes, assists, pit stops, HUD and rendering.
