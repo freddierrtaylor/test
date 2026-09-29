@@ -1,8 +1,8 @@
 # Oasis Circuit Sim
 
-A top-down racing game on the **Oasis / Inner Circuit at Bahrain International Circuit** (2.55 km, 11 turns). It's a single `index.html` page written in vanilla HTML/CSS/JS, with no build step and nothing to install.
+A racing game on the **Oasis / Inner Circuit at Bahrain International Circuit** (2.55 km, 11 turns), with a 3D chase camera, a first-person cockpit view and a top-down view. It's a single `index.html` page written in vanilla HTML/CSS/JS, with no build step and nothing to install.
 
-**Run it:** open `index.html` in a browser. It also works from `file://`.
+**Run it:** open `index.html` in a browser. It also works from `file://`. The 3D views use three.js from cdnjs. Without a connection or WebGL, the game stays top-down.
 
 ## Modes
 
@@ -25,11 +25,29 @@ A top-down racing game on the **Oasis / Inner Circuit at Bahrain International C
 
 Brake assist and the racing line can be switched on or off in either mode.
 
+## Views and elevation
+
+- **Cameras** (V or C cycles; also in the pause menu):
+  - **3D chase**, the default.
+  - **Cockpit:** first person from the driver's seat, with the bonnet, dash, a steering wheel that turns with your inputs, A-pillars and mirror. The field of view widens with speed.
+  - **Top-down chase, top-down follow and map overview.**
+- The pit stop cuts to the top-down view so you can watch the crew work.
+- **Elevation:** the lap climbs about 9 m to a high point mid-lap and drops back down to the start. Slopes pull the car back on climbs and push it on descents. Crests go light, and compressions add grip.
+- **Terrain:** dunes around the circuit and hills further out. The 3D views show them directly, and the top-down view shows them as hill-shading.
+
+## Fun extras (Arcade)
+
+- **Nitro (Shift):** a big shove and a higher top speed while the bottle lasts. It refills slowly on its own and faster while drifting or in a slipstream. The N2O bar is on the dash.
+- **Drifts:** flick the handbrake (Space), then stay on the throttle with lock on to hold the slide. The drift score builds with a combo multiplier and banks when you catch the slide cleanly. Running off the track or hitting a wall loses it.
+- **Slipstream:** tuck in behind a car to get a tow (shown as SLIPSTREAM).
+- **Overtake callouts** in races. Rival name tags float over the cars in 3D.
+
 ## Controls
 
-- Arrows or WASD drive. Shift + throttle gives half throttle, for feeling the turbo lag.
-- Keys: Esc pause, V camera (chase, follow, overview), L racing line, R back on track, N night, O sound.
-- Gamepad: left stick, RT and LT, RB and LB to shift, Start to pause.
+- Arrows or WASD drive. Space is the handbrake.
+- Shift is nitro in Arcade. In Simulation, Shift + throttle gives half throttle, for feeling the turbo lag.
+- Keys: Esc pause, V/C camera, L racing line, R back on track, N night, O sound.
+- Gamepad: left stick, RT and LT, A handbrake, X nitro, RB and LB to shift, Start to pause.
 - Phones get on-screen buttons.
 - In the garage, ← and → change car and Enter starts.
 
@@ -84,4 +102,5 @@ node test/precompute.js scirocco   # re-run the line optimiser; prints JSON for 
 - `audio`: the sound engine.
 - `scenery`: everything drawn around the circuit.
 - `cars`: the top-down car drawings.
+- `view3d`: the terrain and the three.js scene: track, walls, stands, pit building, tower, palms, car models, cockpit, and the chase and cockpit cameras.
 - `ui`: the garage, game modes, assists, pit stops, HUD and rendering.
