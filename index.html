@@ -175,6 +175,7 @@ td.good { color: var(--good); } td.bad { color: var(--red-2); }
 #touch { position: fixed; inset: auto 0 0 0; height: 150px; z-index: 5; display: none; pointer-events: none; padding-bottom: env(safe-area-inset-bottom); }
 #touch button { position: absolute; bottom: 18px; width: 76px; height: 76px; border-radius: 50%; background: rgba(20,21,25,.6); border: 2px solid var(--line-strong); color: var(--text); font-size: 24px; pointer-events: auto; touch-action: none; user-select: none; }
 #touch .l { left: 16px; } #touch .r { left: 104px; } #touch .b { right: 104px; } #touch .g { right: 16px; background: rgba(206,17,38,.55); }
+#touch .h { right: 60px; bottom: 104px; width: 56px; height: 56px; font-size: 14px; font-weight: 700; }
 @media (pointer: coarse) { body.playing #touch { display: block; } body.playing #dash { bottom: 150px; } }
 @media (max-width: 700px) {
   #hudInfo { width: 190px; padding: 8px 10px; } .pos { font-size: 40px; } .big-time { font-size: 28px; }
@@ -216,11 +217,11 @@ td.good { color: var(--good); } td.bad { color: var(--red-2); }
       <button class="mode" data-mode="compare"><b>Compare</b><span>All four cars' racing lines and speed traces.</span></button>
     </div>
     <div class="settings panel">
-      <div class="set-row"><span>Difficulty</span><div class="seg" id="segDiff"><button data-v="easy">Easy</button><button data-v="pro">Pro</button></div></div>
+      <div class="set-row"><span>Handling</span><div class="seg" id="segDiff"><button data-v="easy">Arcade</button><button data-v="pro">Simulation</button></div></div>
       <div class="set-row" id="rowLaps"><span>Race laps</span><div class="seg" id="segLaps"><button data-v="3">3</button><button data-v="5">5</button><button data-v="10">10</button></div></div>
       <div class="set-row"><label class="toggle"><input type="checkbox" id="optBrake"> Brake assist</label><label class="toggle"><input type="checkbox" id="optLine"> Racing line</label><label class="toggle"><input type="checkbox" id="optNight"> Night</label></div>
       <div class="set-row"><span>Sound</span><input type="range" id="optVol" min="0" max="100" value="80" style="width:160px" aria-label="Volume"></div>
-      <div class="keys" id="keysHelp"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> drive · <kbd>Esc</kbd> pause · <kbd>V</kbd> camera · <kbd>L</kbd> racing line · <kbd>R</kbd> back on track · <kbd>O</kbd> sound. In the garage, <kbd>←</kbd><kbd>→</kbd> pick a car and <kbd>Enter</kbd> starts.</div>
+      <div class="keys" id="keysHelp"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> drive (hold brake to reverse) · <kbd>Space</kbd> handbrake · <kbd>Esc</kbd> pause · <kbd>V</kbd> camera · <kbd>L</kbd> racing line · <kbd>R</kbd> back on track · <kbd>O</kbd> sound. In the garage, <kbd>←</kbd><kbd>→</kbd> pick a car and <kbd>Enter</kbd> starts.</div>
     </div>
     <div class="startbar"><span class="muted" id="modeHint" style="color:var(--text-3);font-size:13px"></span><button class="btn go" id="btnStart">Start</button></div>
   </div>
@@ -244,7 +245,7 @@ td.good { color: var(--good); } td.bad { color: var(--red-2); }
 <div id="toast" style="opacity:0"></div>
 <div id="pitflag" class="pitflag hidden"></div>
 <div id="startLights" class="hidden" aria-label="Start lights"><i></i><i></i><i></i><i></i><i></i></div>
-<div id="touch" aria-hidden="true"><button class="l" data-k="arrowleft">◀</button><button class="r" data-k="arrowright">▶</button><button class="b" data-k="arrowdown">■</button><button class="g" data-k="arrowup">▲</button></div>
+<div id="touch" aria-hidden="true"><button class="l" data-k="arrowleft">◀</button><button class="r" data-k="arrowright">▶</button><button class="h" data-k="handbrake">HB</button><button class="b" data-k="arrowdown">■</button><button class="g" data-k="arrowup">▲</button></div>
 
 <!-- ============================ PAUSE ============================ -->
 <div id="pause" class="overlay hidden">
@@ -811,6 +812,105 @@ const Core = (() => {
     st.heat = heat;
   }
 
+  // ---------------------------------------------------- ARCADE MODEL
+  // A forgiving "open-world game" driving model for Easy mode: instant
+  // throttle, strong brakes that never lock, steering that sets a turn rate
+  // the car can hold, grip that pulls the car back in line, a handbrake for
+  // drifts, and reverse on the brake at a standstill. It keeps each car's
+  // character: power curve and turbo lag, weight, turn-in, and the 135i's
+  // power oversteer vs the FWD cars' mild push.
+  const ARCADE = { grip: 1.4, brakeG: 1.35, turnResp: 7.5, latK: 10 };
+  function arcadeAyMax(c, gripMul = 1) { return G * Math.min(c.muF, c.muR) * ARCADE.grip * gripMul; }
+  function stepArcade(c, st, inp, dt, tr, env = {}) {
+    const pr = project(tr, st.x, st.y, st.idx);
+    st.idx = pr.i; st.s = pr.s; st.d = pr.d;
+    st.inPit = tr.pit ? inPitLane(tr, pr.s, pr.d) : false;
+    st.off = !st.inPit && Math.abs(pr.d) > tr.hw + 0.9;
+    const onRunoff = !st.inPit && Math.abs(pr.d) > tr.hw + 1.5;
+    st.onKerb = !st.inPit && Math.abs(pr.d) > tr.hw - 0.9 && Math.abs(pr.d) < tr.hw + 1.4 && Math.abs(tr.K[pr.i]) > 0;
+    const thr = clamp(inp.thr, 0, 1), brk = clamp(inp.brk, 0, 1), hand = !!inp.handbrake;
+    const steer = clamp(inp.steer, -1, 1);
+    const surf = onRunoff ? 0.75 : 1;
+    const v = Math.hypot(st.vx, st.vy), fwd = st.vx;
+    // --- gearbox (automatic, smooth) and engine
+    const ratioOf = g => c.gears[g] * c.final;
+    const wheelRpm = g => Math.abs(fwd) / c.rw * ratioOf(g) * 30 / Math.PI;
+    if (fwd > 0.5) {
+      while (st.gear < c.gears.length - 1 && wheelRpm(st.gear) > c.shiftRpm) st.gear++;
+      while (st.gear > 0 && wheelRpm(st.gear - 1) < c.redline * 0.72) st.gear--;
+    } else st.gear = 0;
+    const rpmT = Math.max(c.idle + thr * 2200 * (fwd < 3 ? 1 : 0), wheelRpm(st.gear));
+    st.rpm += (Math.min(c.redline, rpmT) - st.rpm) * Math.min(1, dt * 12);
+    if (c.turbo) {
+      const tb = c.turbo, spool = clamp((st.rpm - tb.start) / (tb.full - tb.start), 0, 1);
+      const want = thr * spool, tau = want > st.boost ? tb.tau * 0.8 * (1 + 0.8 * tb.partK * (1 - thr) / 2) : 0.12;
+      st.boost += (want - st.boost) * clamp(dt / tau, 0, 1);
+    }
+    const rpmEng = Math.max(st.rpm, 2600);
+    const Te = c.tqScale * (thr * interp(c.tqBase, rpmEng) + (c.tqBoost ? st.boost * interp(c.tqBoost, rpmEng) : 0));
+    let aDrive = Te * ratioOf(st.gear) * c.eff / c.rw / c.mass * 1.15;
+    const aTrac = G * c.muR * ARCADE.grip * surf * (c.driven === 1 ? 1.05 : 0.95);
+    aDrive = Math.min(aDrive, aTrac);
+    if (st.rpm >= c.redline - 50 && st.gear === c.gears.length - 1) aDrive = 0;
+    // --- longitudinal
+    const drag = 0.5 * 1.18 * c.cda * fwd * Math.abs(fwd) / c.mass + (c.crr + (onRunoff ? 0.05 : 0)) * G * Math.sign(fwd);
+    let ax = -drag;
+    if (inp.reverse) { ax += thr * -5.5; if (fwd < -9) ax = Math.max(ax, 0); }
+    else ax += aDrive;
+    if (brk > 0) {
+      const aB = ARCADE.brakeG * G * surf * brk * (env.brakeMul || 1);
+      if (Math.abs(fwd) < aB * dt) { st.vx = 0; ax = inp.reverse ? ax : 0; }
+      else ax -= aB * Math.sign(fwd);
+    }
+    if (hand) ax -= 2.5 * Math.sign(fwd);
+    // engine braking off throttle
+    if (!thr && !brk && fwd > 1) ax -= 0.6;
+    // --- turning: steer sets a target yaw rate the tyres can hold
+    const ayMax = arcadeAyMax(c, env.gripMul || 1) * surf;
+    const vs = Math.max(Math.abs(fwd), 0.1);
+    const rSteer = vs * Math.tan(c.steerMax * 1.1) / c.wb;
+    let rGrip = ayMax / Math.max(vs, 4);
+    if (hand) rGrip *= 1.5;
+    if (c.driven === 1 && thr > 0.8 && Math.abs(steer) > 0.3) rGrip *= 1.15;   // RWD: power oversteer
+    if (c.driven === 0 && thr > 0.8 && v > 12) rGrip *= 0.9;                    // FWD: mild push on power
+    const rMax = Math.min(rSteer, rGrip);
+    const rT = steer * rMax * Math.sign(fwd || 1);
+    const resp = ARCADE.turnResp * (c.steerRate / 2.3) / Math.sqrt(c.izK);
+    st.r += (rT - st.r) * Math.min(1, dt * resp);
+    st.steer = Math.atan(c.wb * rT / Math.max(vs, 1)) ;
+    // --- integrate in the body frame; lateral grip pulls the car back in line
+    st.vx += (ax + st.vy * st.r) * dt;
+    st.vy += (-st.vx * st.r) * dt;
+    let latK = ARCADE.latK * surf;
+    if (hand) latK = 3.2;
+    else if (c.driven === 1 && thr > 0.8 && Math.abs(st.r) > 0.3) latK = 4.5;   // lets the 135i slide
+    st.vy *= Math.exp(-latK * dt);
+    // sliding scrubs speed
+    st.vx -= Math.sign(st.vx) * Math.min(Math.abs(st.vx), Math.abs(st.vy) * 0.6 * dt);
+    const cy = Math.cos(st.yaw), sy = Math.sin(st.yaw);
+    const dx = (st.vx * cy - st.vy * sy) * dt, dy = (st.vx * sy + st.vy * cy) * dt;
+    st.x += dx; st.y += dy; st.yaw += st.r * dt; st.dist += Math.hypot(dx, dy); st.t += dt;
+    // --- values the HUD, skid marks, sound and camera read
+    const slip = Math.atan2(st.vy, Math.max(1, Math.abs(st.vx)));
+    st.aR = slip * (hand ? 2 : 1.4); st.aF = slip * 0.8 + (Math.abs(st.r) > 0.95 * rGrip && v > 8 ? Math.sign(st.r) * c.apkF * DEG * 1.2 : 0);
+    st.uF = c.driven === 0 ? aDrive / Math.max(1, aTrac) : 0; st.uR = c.driven === 1 ? aDrive / Math.max(1, aTrac) : 0;
+    st.spin = [c.driven === 0 && thr > 0.9 && fwd < 8 && aDrive >= aTrac * 0.99, c.driven === 1 && thr > 0.9 && fwd < 10 && aDrive >= aTrac * 0.99];
+    st.thr = thr; st.brk = brk; st.axF = ax; st.reverse = !!inp.reverse; st.hand = hand;
+    const Fz = c.mass * G / 2; st.fz = [Fz, Fz]; st.cap = [Fz * c.muF, Fz * c.muR]; st.fy = [0, 0]; st.fx = [0, 0];
+    const amb = env.ambient ?? 35, work = Math.abs(st.vy) * 3 + Math.abs(st.r * v) * 0.6 + brk * v * 0.3;
+    for (let k = 0; k < 2; k++) st.tT[k] += ((50 + amb + work * 2.2) - st.tT[k]) * dt * 0.08;
+  }
+  // Speed plan for the arcade model (brake assist and the coloured line)
+  function arcadeProfile(c, line, gripMul = 1) {
+    const N = line.k.length, v = new Float64Array(N), ay = arcadeAyMax(c, gripMul) * 0.9, dec = ARCADE.brakeG * G * 0.8;
+    for (let i = 0; i < N; i++) v[i] = Math.min(80, Math.sqrt(ay / Math.max(1e-5, Math.abs(line.k[i]))));
+    for (let pass = 0; pass < 2; pass++) for (let q = 0; q < N; q++) {
+      const j = (N - 1 - q + N) % N, i = (j - 1 + N) % N;
+      v[i] = Math.min(v[i], Math.sqrt(v[j] * v[j] + 2 * dec * line.ds[i]));
+    }
+    return { v };
+  }
+
   // ---------------------------------------------------- RACING LINE / PROFILE
   // Line = lateral offset n[i] from centreline at every metre.
   function linePoints(tr, n) {
@@ -1333,7 +1433,7 @@ const Core = (() => {
 
   return {
     G, DEG, clamp, lerp, CARS, buildTrack, project, wrapS, dS, newCarState, step, pickGear,
-    pitCentre, inPitLane, inPitLimit, carLine, setCarLine, resetLineCache, lineOptimiser, baseLine, packOffsets, expandOffsets, prepareDriver, speedProfile, skidpad, shortestLine, linePoints, optimiseLine, makeAI, makeTimer, simulate, mulberry32, gauss,
+    stepArcade, arcadeProfile, arcadeAyMax, ARCADE, pitCentre, inPitLane, inPitLimit, carLine, setCarLine, resetLineCache, lineOptimiser, baseLine, packOffsets, expandOffsets, prepareDriver, speedProfile, skidpad, shortestLine, linePoints, optimiseLine, makeAI, makeTimer, simulate, mulberry32, gauss,
     tempGrip, wearGrip, engineTorqueSS, maxEngineForce, interp,
   };
 })();
@@ -2413,7 +2513,7 @@ const CarArt = (() => {
   // Difficulty: Easy is a forgiving arcade car (lots of grip, quick steering,
   // assists); Pro is the raw simulation. The AI races with the same grip.
   const DIFF = {
-    easy: { env: { gripMul: 1.45, steerRateMul: 1.8, brakeMul: 1.25, offGrip: 0.85, offDrag: 0.025 }, aiPace: 0.9, assist: true },
+    easy: { env: { gripMul: 1.45, steerRateMul: 1.8, brakeMul: 1.25, offGrip: 0.85, offDrag: 0.025 }, aiPace: 0.9, assist: true, arcade: true },
     pro: { env: { gripMul: 1.0, offGrip: 0.55, offDrag: 0.09 }, aiPace: 0.975, assist: false },
   };
 
@@ -2540,7 +2640,8 @@ const CarArt = (() => {
   const profCache = {};
   function playerProfile(key) {
     const k = key + S.diff;
-    if (!profCache[k]) profCache[k] = Core.speedProfile(CARS[key], Core.carLine(TR, key).line, { grip: diff().env.gripMul, reserve: 0.97 });
+    if (!profCache[k]) profCache[k] = diff().arcade ? Core.arcadeProfile(CARS[key], Core.carLine(TR, key).line)
+      : Core.speedProfile(CARS[key], Core.carLine(TR, key).line, { grip: diff().env.gripMul, reserve: 0.97 });
     return profCache[k];
   }
   function nearestLine(r) {
@@ -2589,13 +2690,15 @@ const CarArt = (() => {
     if (keys.has('arrowleft') || keys.has('a')) sIn += 1;
     if (keys.has('arrowright') || keys.has('d')) sIn -= 1;
     if (keys.has('arrowup') || keys.has('w')) tIn = keys.has('shift') ? 0.5 : 1;
-    if (keys.has('arrowdown') || keys.has('s') || keys.has(' ')) bIn = 1;
+    if (keys.has('arrowdown') || keys.has('s')) bIn = 1;
+    ctl.hand = keys.has(' ') || keys.has('handbrake');
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     for (const gp of pads) {
       if (!gp) continue;
       const ax = gp.axes[0] || 0; if (Math.abs(ax) > 0.08) { sIn = -Math.sign(ax) * Math.pow(Math.abs(ax), 1.4); analog = true; }
       const rt = gp.buttons[7] ? gp.buttons[7].value : 0, lt = gp.buttons[6] ? gp.buttons[6].value : 0;
       if (rt > 0.02) tIn = rt; if (lt > 0.02) bIn = lt;
+      if (gp.buttons[0] && gp.buttons[0].pressed) ctl.hand = true; // A / cross = handbrake
       if (gp.buttons[5] && gp.buttons[5].pressed && !S.padUp) ctl.up = true; if (gp.buttons[4] && gp.buttons[4].pressed && !S.padDown) ctl.down = true;
       S.padUp = gp.buttons[5] && gp.buttons[5].pressed; S.padDown = gp.buttons[4] && gp.buttons[4].pressed;
       if (gp.buttons[9] && gp.buttons[9].pressed && !S.padStart) togglePause(); S.padStart = gp.buttons[9] && gp.buttons[9].pressed;
@@ -2604,8 +2707,9 @@ const CarArt = (() => {
     const rate = (cur, tgt, up, down) => cur + Math.max(-down * dt, Math.min(up * dt, tgt - cur));
     const easy = diff().assist;
     if (analog) ctl.steer = sIn;
-    else ctl.steer = rate(ctl.steer, sIn, easy ? 6 : 3.2, easy ? 9 : 7);
-    ctl.thr = rate(ctl.thr, tIn, 8, 12); ctl.brk = rate(ctl.brk, bIn, 10, 14);
+    else ctl.steer = rate(ctl.steer, sIn, easy ? 7 : 3.2, easy ? 12 : 7);
+    // arcade: pedals respond instantly
+    ctl.thr = easy ? tIn : rate(ctl.thr, tIn, 8, 12); ctl.brk = easy ? bIn : rate(ctl.brk, bIn, 10, 14);
   }
 
   // ------------------------------------------------------------ driving: player
@@ -2614,7 +2718,17 @@ const CarArt = (() => {
     const inp = { thr: ctl.thr, brk: ctl.brk, steer: ctl.steer, shiftUp: ctl.up, shiftDown: ctl.down, autoShift: diff().assist || store.auto !== false, tc: diff().assist, allowReverse: true };
     ctl.up = ctl.down = false;
     const v = Math.max(0, st.vx), gm = diff().env.gripMul;
-    if (diff().assist) {
+    if (diff().arcade) {
+      // GTA-style: brake slows you, then reverses once you're stopped; throttle
+      // while rolling backwards brakes first. Space is the handbrake.
+      inp.handbrake = ctl.hand;
+      if (ctl.brk > 0 && !ctl.thr && st.vx < 0.8) { r.reversing = true; }
+      if (ctl.thr > 0 && st.vx > -0.5) r.reversing = false;
+      if (r.reversing) {
+        if (ctl.thr > 0) { inp.thr = 0; inp.brk = 1; }
+        else { inp.reverse = true; inp.thr = ctl.brk; inp.brk = 0; }
+      }
+    } else if (diff().assist) {
       // Steering picks a path curvature the tyres can hold (never past the
       // fronts' grip), with automatic countersteer.
       const ay = (car.ayCal || 9) * gm * 0.97;
@@ -2640,9 +2754,10 @@ const CarArt = (() => {
       let aNeed = 0;
       for (let q = 4; q < 20 + v * v / 12; q += 3) { const vq = prof.v[(li + q) % N]; if (vq < v) aNeed = Math.max(aNeed, (v * v - vq * vq) / (2 * q)); }
       const vt = prof.v[(li + Math.round(v * 0.15)) % N];
-      const aMax = 0.9 * Core.G * car.muF * gm;
-      if (aNeed > 0.6 * aMax || v > vt * 1.04 + 1) {
-        const b = clamp(aNeed * car.mass / (car.brakeMax * (diff().env.brakeMul || 1)) + (v - vt) * 0.04, 0, 1);
+      const aMax = diff().arcade ? Core.ARCADE.brakeG * Core.G * 0.8 : 0.9 * Core.G * car.muF * gm;
+      if (!r.reversing && (aNeed > 0.6 * aMax || v > vt * 1.04 + 1)) {
+        const b = diff().arcade ? clamp(aNeed / (Core.ARCADE.brakeG * Core.G) + (v - vt) * 0.05, 0, 1)
+          : clamp(aNeed * car.mass / (car.brakeMax * (diff().env.brakeMul || 1)) + (v - vt) * 0.04, 0, 1);
         inp.brk = Math.max(inp.brk, b); inp.thr = 0; r.assistBrake = b;
       }
     }
@@ -2874,6 +2989,15 @@ const CarArt = (() => {
       }
       const px = st.x, py = st.y;
       if (r.isPlayer && S.pitStop && !S.pitStop.released) holdCar(r, inp.thr, dt, SC.boxPose);
+      else if (r.isPlayer && diff().arcade && !AUTOPILOT) {
+        // pit-lane guidance gives a wheel angle; turn it into an arcade steer input
+        if (inp.steerAngle !== undefined) {
+          const vs = Math.max(1, Math.abs(st.vx)), k = Math.tan(inp.steerAngle) / r.car.wb;
+          const rMax = Math.min(vs * Math.tan(r.car.steerMax * 1.1) / r.car.wb, Core.arcadeAyMax(r.car, 1) / Math.max(vs, 4));
+          inp.steer = clamp(vs * k / rMax, -1, 1);
+        }
+        Core.stepArcade(r.car, st, inp, dt, TR, env());
+      }
       else Core.step(r.car, st, inp, dt, TR, env());
       walls(r);
       if (r.isPlayer) {
@@ -2931,7 +3055,12 @@ const CarArt = (() => {
 
   // ------------------------------------------------------------ time trial
   function medalTargets(key) {
-    const p = Core.speedProfile(CARS[key], Core.carLine(TR, key).line, { grip: DIFF[S.diff].env.gripMul, reserve: 0.99 }).lapTime;
+    if (DIFF[S.diff].arcade) {
+      const line = Core.carLine(TR, key).line, v = Core.arcadeProfile(CARS[key], line).v;
+      let t = 0; for (let i = 0; i < N; i++) t += line.ds[i] / Math.max(1, v[i]);
+      return { gold: t * 1.32, silver: t * 1.42, bronze: t * 1.55 }; // the plan ignores acceleration; a clean lap is ~1.26x it
+    }
+    const p =Core.speedProfile(CARS[key], Core.carLine(TR, key).line, { grip: DIFF[S.diff].env.gripMul, reserve: 0.99 }).lapTime;
     return { gold: p * 1.03, silver: p * 1.08, bronze: p * 1.15 };
   }
   function medalFor(key, t) { const m = medalTargets(key); return t <= m.gold ? 'gold' : t <= m.silver ? 'silver' : t <= m.bronze ? 'bronze' : null; }
@@ -3056,7 +3185,7 @@ const CarArt = (() => {
   // lift / carry speed, red = brake now (given how fast you're going).
   function drawDynamicLine(r) {
     const line = Core.carLine(TR, r.key).line, prof = playerProfile(r.key), li = nearestLine(r);
-    const v = Math.max(0, r.st.vx), aMax = 0.85 * Core.G * r.car.muF * diff().env.gripMul;
+    const v = Math.max(0, r.st.vx), aMax = diff().arcade ? Core.ARCADE.brakeG * Core.G * 0.8 : 0.85 * Core.G * r.car.muF * diff().env.gripMul;
     ctx.lineWidth = 1.1; ctx.lineCap = 'round';
     let prevCol = null;
     ctx.beginPath();
@@ -3185,7 +3314,7 @@ const CarArt = (() => {
     } else if (S.mode === 'trial') {
       const b = store.best[bestKey()], d = deltaToBest(), m = medalTargets(S.carKey), sc = S.sectorCls || [];
       const med = (k, t) => `<span class="medal ${b && b.time <= t ? '' : 'dim'}"><i style="background:var(--${k})"></i>${fmt(t).slice(0, -1)}</span>`;
-      info.innerHTML = `<div class="lapline"><span class="lbl">${r.timer.started ? `Lap ${r.timer.lap}${r.timer.valid ? '' : ' · invalid'}` : 'Out lap'}</span><span class="lbl">${S.diff === 'easy' ? 'Easy' : 'Pro'}</span></div>
+      info.innerHTML = `<div class="lapline"><span class="lbl">${r.timer.started ? `Lap ${r.timer.lap}${r.timer.valid ? '' : ' · invalid'}` : 'Out lap'}</span><span class="lbl">${S.diff === 'easy' ? 'Arcade' : 'Simulation'}</span></div>
         <div class="big-time" style="${r.timer.valid ? '' : 'color:var(--red-2)'}">${r.timer.started ? fmt(r.timer.current(S.time)) : '–:––.–––'}</div>
         <div class="lapline"><span class="delta ${d == null ? '' : d < 0 ? 'neg' : 'pos'}">${d == null ? '' : fmtD(d)}</span><span class="num" style="color:var(--text-2)">Best ${b ? fmt(b.time) : '–'}</span></div>
         <div class="sectors">${[0, 1, 2].map(k => `<div class="sector ${sc[k] ? sc[k].cls : ''}">${sc[k] ? sc[k].t.toFixed(2) : 'S' + (k + 1)}</div>`).join('')}</div>
@@ -3274,7 +3403,7 @@ const CarArt = (() => {
     for (const b of $('paints').querySelectorAll('button')) b.onclick = () => { store.paint[S.carKey] = +b.dataset.i; save(); renderGarage(); if (S.demo) S.demo.color = paintOf(S.carKey); };
     $('carBlurb').textContent = c.blurb;
     const m = medalTargets(S.carKey), got = store.medals[bestKey()], b = store.best[bestKey()], rank = { gold: 3, silver: 2, bronze: 1 };
-    $('carMedals').innerHTML = `<span class="lbl" style="align-self:center">Time trial (${S.diff === 'easy' ? 'Easy' : 'Pro'})</span>` + ['gold', 'silver', 'bronze'].map(k => `<span class="medal ${got && rank[got] >= rank[k] ? '' : 'dim'}"><i style="background:var(--${k})"></i>${fmt(m[k]).slice(0, -1)}</span>`).join('') + `<span>Best ${b ? fmt(b.time) : '–'}</span>`;
+    $('carMedals').innerHTML = `<span class="lbl" style="align-self:center">Time trial (${S.diff === 'easy' ? 'Arcade' : 'Simulation'})</span>` + ['gold', 'silver', 'bronze'].map(k => `<span class="medal ${got && rank[got] >= rank[k] ? '' : 'dim'}"><i style="background:var(--${k})"></i>${fmt(m[k]).slice(0, -1)}</span>`).join('') + `<span>Best ${b ? fmt(b.time) : '–'}</span>`;
     for (const el of document.querySelectorAll('.mode')) el.classList.toggle('on', el.dataset.mode === S.gameMode);
     $('rowLaps').classList.toggle('hidden', S.gameMode !== 'race');
     $('modeHint').textContent = { race: `${S.laps} laps · you start P4`, trial: 'Timed from the start/finish line', watch: 'AI drives your car on its racing line', compare: 'Runs an AI lap in every car' }[S.gameMode];
