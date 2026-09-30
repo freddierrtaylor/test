@@ -6,7 +6,7 @@ const tr = Core.buildTrack();
 const laps = +(process.argv[2] || 8), pace = +(process.argv[3] || 0.99);
 const fmt = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(3).padStart(6, '0')}`;
 
-for (const key of Object.keys(Core.CARS)) {
+for (const key of Core.REGULAR) {
   const c = Core.CARS[key], lo = Core.carLine(tr, key);
   // qualifying lap with tracking stats
   const ai = Core.makeAI(c, tr, lo, { pace: 1 });

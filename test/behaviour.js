@@ -86,7 +86,7 @@ for (const key of ['tt', 'bmw135']) {
 }
 
 // Lap times: AI qualifying laps in a sensible window around the 1:15.8 reference.
-for (const key of Object.keys(Core.CARS)) {
+for (const key of Core.REGULAR) {
   const r = Core.simulate(key, tr, { laps: 1, pace: 1, wear: false }).results[0];
   check(r && r.valid && r.time > 72 && r.time < 80, `${key}: AI qualifying lap ${r ? r.time.toFixed(3) : 'none'} s (valid: ${r && r.valid})`);
 }

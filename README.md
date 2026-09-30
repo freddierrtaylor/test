@@ -32,7 +32,10 @@ Brake assist and the racing line can be switched on or off in either mode.
   - **Cockpit:** first person from the driver's seat, with the bonnet, dash, a steering wheel that turns with your inputs, A-pillars and mirror. The field of view widens with speed.
   - **Top-down chase, top-down follow and map overview.**
 - The pit stop cuts to the top-down view so you can watch the crew work.
-- **Elevation:** the lap climbs about 9 m to a high point mid-lap and drops back down to the start. Slopes pull the car back on climbs and push it on descents. Crests go light, and compressions add grip.
+- **Elevation:** the whole BIC site varies by about 17 m, with its high point at GP Turn 13 and an undulating downhill back straight. The steepest grades are 3.6% up and 5.6% down.
+  - The Inner loop runs that back straight in reverse, so the start straight climbs to T1, the high point.
+  - The lap then falls along the T2–T3 diagonal, rises to T6 and a crest at T8, and drops into T9–T11. That's about 10 m in total, with grades up to 2.4%.
+  - Slopes pull the car back on climbs and push it on descents. Crests go light, and dips add grip.
 - **Terrain:** dunes around the circuit and hills further out. The 3D views show them directly, and the top-down view shows them as hill-shading.
 
 ## Fun extras (Arcade)
@@ -41,6 +44,20 @@ Brake assist and the racing line can be switched on or off in either mode.
 - **Drifts:** flick the handbrake (Space), then stay on the throttle with lock on to hold the slide. The drift score builds with a combo multiplier and banks when you catch the slide cleanly. Running off the track or hitting a wall loses it.
 - **Slipstream:** tuck in behind a car to get a tow (shown as SLIPSTREAM).
 - **Overtake callouts** in races. Rival name tags float over the cars in 3D.
+
+## Secret cars
+
+Type **SAKHIR** in the garage (on a phone, tap the car's name 7 times) to unlock two secret cars. Both always use Arcade handling.
+
+- **Ferrari F2004** (Time Trial only):
+  - 3.0 V10 revving to 19,000 rpm, about 900 hp in 605 kg with the driver.
+  - Downforce adds grip and braking with speed.
+  - Its own open-wheel model: raised nose, sidepods, airbox, wings, exposed wheels and a Schumacher-red helmet.
+  - Screaming V10 sound and an onboard camera.
+- **Lancia Delta S4** (Race and Time Trial):
+  - Group B, mid-engined, four-wheel drive, a 1.8 with both a supercharger and a turbo, over 500 hp in under a tonne.
+  - Martini stripes, rally lamps, roof intake and rear wing.
+  - Anti-lag crackles in the sound.
 
 ## Controls
 
@@ -53,7 +70,15 @@ Brake assist and the racing line can be switched on or off in either mode.
 
 ## The cars
 
-Each car is drawn top-down at its real length and width, with its own details: the Scirocco's wide rear and light bar, the FN2 Civic's long windscreen, roof spoiler and triangle tail lights, the 135i's long bonnet, kidney grille and set-back cabin, and the TT's dome roof and round fuel cap. Each comes in five factory paint colours.
+Each car is a 3D model built at its real length, width and height.
+- **How the bodies are built:** each body is lofted from its own bonnet/deck line, sill line, plan-view width and roof profile. The sides have wheel arches cut into them. The glasshouse is a separate piece with A/B/C pillars and see-through glass, and the multi-spoke wheels turn and steer.
+- **What sets each car apart:**
+  - the Scirocco's low fastback, black grille bar, full-width light bar and roof spoiler;
+  - the FN2 Civic's one-box wedge with a windscreen starting far forward, triangle tail lights and roof spoiler;
+  - the 135i's long bonnet, set-back cabin, chrome kidneys, angel eyes and L-shaped tail lights;
+  - the TT's arched dome roof, single-frame grille and round fuel cap.
+- **Garage and top-down view:** the garage shows the selected car on a rotating turntable, and the top-down sprites are rendered from the same models.
+- **Paint:** each car comes in five factory colours.
 
 | | Layout | Box | Mass | Power | Weight F/R | Character |
 |---|---|---|---|---|---|---|
@@ -64,7 +89,10 @@ Each car is drawn top-down at its real length and width, with its own details: t
 
 ## Track, pits and scenery
 
-- **Track:** traced from the official BIC map of the Inner layout. The start/finish straight runs north–south on the west side, then comes the T1 hairpin, the long T2–T3 diagonal, T4–T5, the T6 hairpin, T7–T8, the T9 hairpin and T10–T11 back onto the straight. Each map vertex is filleted with a corner radius and the loop is scaled to 2,550 m. The track is 15 m wide.
+- **Track:** the Inner/Oasis layout is a 2.55 km anticlockwise infield loop with 11 turns.
+  - **How the centreline was made:** it was extracted from the official BIC map by taking the skeleton of the drawn track, smoothing it and scaling the lap to 2,550 m. At that scale the drawn track comes out about 15 m wide, as it should be.
+  - **The lap:** cars head south down the west straight into the T1 hairpin, climb the T2–T3 diagonal to T4–T5 and the T6 hairpin, come back west through T7–T8, round the T9 hairpin, and run north past T10 to the T11 hairpin.
+  - **Corners:** these are detected from curvature peaks and named from the map's corner numbers.
 - **Pit lane:** alongside the main straight, behind a pit wall, with a 60 km/h limiter. Stop in your box for an animated tyre change: crew, jacks, four wheel guns and the lollipop.
 - **Scenery:** the Sakhir Tower, main and corner grandstands with crowds, the paddock, palm groves and an oasis pond, floodlight towers, car parks and asphalt run-off with walls. There's also a day/night switch.
 
@@ -101,6 +129,7 @@ node test/precompute.js scirocco   # re-run the line optimiser; prints JSON for 
 - `core`: the track, cars, physics, speed planner, line optimiser, AI, lap timer and headless `simulate()`. It has no DOM access.
 - `audio`: the sound engine.
 - `scenery`: everything drawn around the circuit.
-- `cars`: the top-down car drawings.
+- `cars`: the top-down car drawings (fallback when WebGL is unavailable).
+- `models`: the 3D car models (lofted bodies, glasshouse, wheels, details, and the F2004 open-wheeler).
 - `view3d`: the terrain and the three.js scene: track, walls, stands, pit building, tower, palms, car models, cockpit, and the chase and cockpit cameras.
 - `ui`: the garage, game modes, assists, pit stops, HUD and rendering.
