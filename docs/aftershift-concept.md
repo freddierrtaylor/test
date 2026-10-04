@@ -48,6 +48,10 @@ These show the "cars in context" rule in practice.
 - The world is fictionalised. Real places are only visual references, and the map does not claim to be an exact copy of Bahrain.
 - Use original or properly licensed vehicles, logos and brands.
 
+## The playable slice
+
+[`aftershift/`](../aftershift/README.md) is a playable slice of this concept. It has all four pillars on one island, the lead → search → discover → buy → restore loop, 15 cars across five sets and rarities, five reputation tracks, time trials, drag nights, a desert run, parts runs, a day-night cycle and saving. It gives the placeholder places below their names: Manara Bay, Lulu Quarter, Ras Hadid, Wadi Naft Field, Al Rimal International Circuit and Jazirat Al Marsa.
+
 ## How the existing prototype fits
 
 The [Oasis Circuit Sim](../index.html) in this repo is a working prototype of AFTERSHIFT's **circuit** pillar. It has a BIC-inspired track with elevation, pits, time trials with medals, races against AI, night lighting, replays, and per-car physics and sound. The parts most worth carrying forward are:

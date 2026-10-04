@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AFTERSHIFT</title>
+<meta name="description" content="AFTERSHIFT: an automotive discovery and collection game set on a fictional island inspired by Bahrain and the Gulf. Find hidden cars, restore them, and work your way into the region's car scene.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1013; --panel: rgba(18, 19, 23, 0.9); --panel2: rgba(30, 31, 37, 0.92); --line: rgba(255, 255, 255, 0.12);
+    --text: #f3efe6; --muted: #b6ae9f; --sand: #e8b45a; --sand2: #f3d29a; --teal: #4fc1c9; --red: #e2557a; --good: #6cd08f;
+    --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif; --ar: "Cairo", "Noto Naskh Arabic", "Geeza Pro", "Tahoma", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font); -webkit-user-select: none; user-select: none; touch-action: none; }
+  #view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .ar { font-family: var(--ar); direction: rtl; }
+  .hidden { display: none !important; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* ---------------------------------------------------------------- HUD */
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  #hud-tl { position: absolute; left: 16px; top: 14px; max-width: min(420px, 60vw); text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
+  #money { font-weight: 800; font-size: 22px; letter-spacing: 0.02em; }
+  #money small { font-weight: 600; color: var(--sand2); font-size: 13px; margin-left: 4px; }
+  #clock { font-size: 14px; color: var(--sand2); margin-top: 2px; font-weight: 600; }
+  #zone { margin-top: 8px; font-size: 13px; color: #fff; opacity: 0.9; }
+  #zone .ar { display: block; font-size: 15px; direction: ltr; opacity: 0.85; }
+  #objective { margin-top: 10px; font-size: 13px; line-height: 1.35; background: rgba(0,0,0,0.38); border-left: 3px solid var(--sand); padding: 6px 9px; border-radius: 0 6px 6px 0; }
+  #minimap { position: absolute; right: 16px; top: 14px; width: 176px; height: 176px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.8); box-shadow: 0 4px 16px rgba(0,0,0,0.45); background: #1f6d80; }
+  #speedo { position: absolute; right: 20px; bottom: 18px; text-align: right; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
+  #spd { font-size: 54px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  #speedo .unit { font-size: 13px; color: var(--sand2); margin-left: 4px; }
+  #gear { font-size: 16px; font-weight: 800; color: var(--sand); }
+  #rpmbar { width: 170px; height: 6px; background: rgba(255,255,255,0.18); border-radius: 3px; margin: 6px 0 4px auto; overflow: hidden; }
+  #rpmbar i { display: block; height: 100%; width: 10%; background: linear-gradient(90deg, var(--teal), var(--sand) 70%, var(--red)); }
+  #surf { font-size: 12px; color: var(--muted); }
+  #carname { font-size: 12px; color: #fff; opacity: 0.85; }
+  #prompt { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); background: rgba(0,0,0,0.65); border: 1px solid var(--line); padding: 9px 16px; border-radius: 22px; font-weight: 600; font-size: 15px; white-space: nowrap; pointer-events: auto; cursor: pointer; }
+  #prompt kbd { background: var(--sand); color: #111; border-radius: 5px; padding: 1px 7px; margin-right: 8px; font-family: var(--font); font-weight: 800; }
+  #hud-event { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); text-align: center; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
+  #hud-event .big { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  #hud-event .sub { font-size: 14px; color: var(--sand2); }
+  #toasts { position: absolute; left: 50%; top: 110px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .toast { background: rgba(14,15,18,0.88); border: 1px solid var(--line); border-left: 4px solid var(--sand); padding: 10px 16px; border-radius: 8px; font-size: 15px; max-width: min(520px, 90vw); text-align: center; animation: tin 0.25s ease-out; }
+  .toast.good { border-left-color: var(--good); } .toast.bad { border-left-color: var(--red); }
+  @keyframes tin { from { opacity: 0; transform: translateY(-8px); } }
+  #tree { position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%); display: flex; gap: 14px; }
+  #tree i { width: 34px; height: 34px; border-radius: 50%; background: #2a2a2a; border: 3px solid #111; box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
+  #tree i.amber { background: #ffb020; box-shadow: 0 0 22px #ffb020; } #tree i.green { background: #39e06a; box-shadow: 0 0 26px #39e06a; } #tree i.red { background: #ff3030; box-shadow: 0 0 26px #ff3030; }
+
+  /* ------------------------------------------------------------- touch */
+  #touch { position: fixed; inset: auto 0 0 0; height: 0; pointer-events: none; }
+  #touch button { position: fixed; pointer-events: auto; width: 74px; height: 74px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.35); font-size: 22px; font-weight: 800; touch-action: none; }
+  #touch .on { background: rgba(232,180,90,0.55); }
+  #t-left { left: 16px; bottom: 22px; } #t-right { left: 102px; bottom: 22px; }
+  #t-gas { right: 16px; bottom: 120px; } #t-brake { right: 102px; bottom: 120px; } #t-hb { right: 188px; bottom: 120px; width: 60px !important; height: 60px !important; font-size: 13px !important; }
+  #t-act { left: 16px; bottom: 112px; width: 60px !important; height: 60px !important; } #t-menu { right: 16px; top: 200px; width: 50px !important; height: 50px !important; font-size: 16px !important; }
+
+  /* ------------------------------------------------------------- panels */
+  #panel { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(5,6,8,0.45); padding: 16px; }
+  #panel .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; width: min(860px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 20px 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); user-select: text; -webkit-user-select: text; }
+  #panel .card.narrow { width: min(560px, 100%); }
+  #panel h2 { margin: 0 0 2px; font-size: 22px; letter-spacing: 0.01em; }
+  #panel h3 { margin: 18px 0 8px; font-size: 14px; color: var(--sand2); text-transform: uppercase; letter-spacing: 0.08em; }
+  #panel .role { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  #panel p { line-height: 1.5; margin: 8px 0; }
+  .say { background: var(--panel2); border-radius: 10px; padding: 12px 14px; line-height: 1.55; border-left: 3px solid var(--sand); margin: 10px 0; }
+  .opts { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .opt { text-align: left; background: rgba(255,255,255,0.06); border: 1px solid var(--line); border-radius: 9px; padding: 11px 14px; font-size: 15px; }
+  .opt:hover, .opt:focus-visible, .opt.sel { background: rgba(232,180,90,0.18); border-color: var(--sand); outline: none; }
+  .opt[disabled] { opacity: 0.45; cursor: default; }
+  .opt small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 3px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .btn { background: var(--sand); color: #16130e; border: 0; border-radius: 8px; padding: 9px 14px; font-weight: 700; font-size: 14px; }
+  .btn.ghost { background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--line); }
+  .btn[disabled] { opacity: 0.45; cursor: default; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .carcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; position: relative; }
+  .carcard.sel { border-color: var(--sand); box-shadow: 0 0 0 1px var(--sand) inset; }
+  .carcard img { width: 100%; aspect-ratio: 16 / 9; object-fit: contain; display: block; background: radial-gradient(ellipse at 50% 70%, rgba(255,255,255,0.12), transparent 70%); border-radius: 6px; }
+  .carcard .nm { font-weight: 700; font-size: 14px; margin-top: 6px; }
+  .carcard .meta { font-size: 12px; color: var(--muted); }
+  .rar { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+  .unknown { display: flex; align-items: center; justify-content: center; aspect-ratio: 16 / 9; font-size: 34px; color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.03); border-radius: 6px; }
+  .bar { height: 7px; background: rgba(255,255,255,0.12); border-radius: 4px; overflow: hidden; margin: 3px 0 7px; }
+  .bar i { display: block; height: 100%; background: var(--teal); }
+  .bar.warn i { background: var(--sand); } .bar.bad i { background: var(--red); }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 14px; }
+  .kv b { color: var(--muted); font-weight: 600; }
+  .comp { display: grid; grid-template-columns: 150px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .comp .btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .comp .btn { padding: 7px 10px; font-size: 12.5px; }
+  .tabs { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; }
+  .tabs button { background: rgba(255,255,255,0.06); border: 1px solid var(--line); border-radius: 18px; padding: 6px 13px; font-size: 13px; }
+  .tabs button.on { background: var(--sand); color: #16130e; border-color: var(--sand); font-weight: 700; }
+  #mapcv { width: 100%; height: min(62vh, 560px); display: block; border-radius: 10px; background: #1f6d80; touch-action: none; cursor: grab; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .rep { display: grid; grid-template-columns: 120px 1fr 36px; gap: 10px; align-items: center; font-size: 14px; margin: 6px 0; }
+  .close { float: right; background: none; border: 0; font-size: 26px; line-height: 1; color: var(--muted); padding: 0 4px; }
+  .hint { font-size: 12.5px; color: var(--muted); }
+
+  /* ------------------------------------------------------------- title */
+  #title { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, rgba(10,12,20,0.25), rgba(10,8,6,0.85)); padding: 16px; }
+  #title .box { text-align: center; max-width: 620px; }
+  #title h1 { font-size: clamp(40px, 9vw, 84px); margin: 0; padding: 0 0.06em 0 0.18em; letter-spacing: 0.12em; font-weight: 800; background: linear-gradient(180deg, #fff3d8, #e8b45a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #title .arname { font-family: var(--ar); font-size: 30px; color: var(--sand2); margin-top: -6px; }
+  #title .tag { color: #e8e2d4; margin: 14px auto 22px; line-height: 1.55; max-width: 520px; }
+  #title .row { justify-content: center; }
+  #title .btn { font-size: 17px; padding: 12px 22px; }
+  #title .keys { margin-top: 22px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+  #title .fine { margin-top: 18px; font-size: 11.5px; color: rgba(255,255,255,0.45); }
+  #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #0f1013; color: var(--sand2); font-size: 16px; letter-spacing: 0.1em; }
+  @media (max-width: 640px) {
+    #minimap { width: 120px; height: 120px; }
+    #spd { font-size: 40px; }
+    #hud-tl { max-width: 58vw; }
+    #objective { font-size: 12px; }
+    #speedo { bottom: 210px; }
+    .comp { grid-template-columns: 1fr; }
+    #panel .card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="hud-tl">
+    <div id="money">DN 0</div>
+    <div id="clock">Thu 17:30</div>
+    <div id="zone"></div>
+    <div id="objective"></div>
+  </div>
+  <canvas id="minimap" width="352" height="352"></canvas>
+  <div id="hud-event"></div>
+  <div id="tree" class="hidden"><i></i><i></i><i></i><i></i></div>
+  <div id="speedo"><div id="carname"></div><span id="spd">0</span><span class="unit">km/h</span><div id="gear">1</div><div id="rpmbar"><i></i></div><div id="surf"></div></div>
+  <div id="prompt" class="hidden"></div>
+  <div id="toasts"></div>
+</div>
+
+<div id="touch" class="hidden">
+  <button id="t-left" aria-label="Steer left">◀</button><button id="t-right" aria-label="Steer right">▶</button>
+  <button id="t-gas" aria-label="Accelerate">▲</button><button id="t-brake" aria-label="Brake">▼</button><button id="t-hb" aria-label="Handbrake">HB</button>
+  <button id="t-act" aria-label="Interact">E</button><button id="t-menu" aria-label="Menu">☰</button>
+</div>
+
+<div id="panel" class="hidden"><div class="card" id="card"></div></div>
+
+<div id="title" class="hidden">
+  <div class="box">
+    <h1>AFTERSHIFT</h1>
+    <div class="arname">أفترشفت</div>
+    <p class="tag">An old saloon, a rented workshop unit and DN 1,500. Somewhere on this island are cars nobody has seen for decades. Find them, restore them, and earn your place in the Gulf car scene.</p>
+    <div class="row"><button class="btn" id="b-continue">Continue</button><button class="btn ghost" id="b-new">New game</button></div>
+    <div class="keys">
+      <b>Drive</b> arrows / WASD · <b>Handbrake</b> Space · <b>Interact</b> E · <b>Map</b> M · <b>Menu</b> Esc<br>
+      <b>Camera</b> C · <b>Photo mode</b> P · <b>Back to the road</b> R · Gamepad and touch supported
+    </div>
+    <div class="fine">A fictional island inspired by Bahrain. Every place, person, make and model in the game is invented. The map is not a representation of the real country.</div>
+  </div>
+</div>
+<div id="loading">BUILDING THE ISLAND…</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/world.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/render2d.js"></script>
+<script src="js/render3d.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
