@@ -38,6 +38,29 @@ Brake assist and the racing line can be switched on or off in either mode.
   - Slopes pull the car back on climbs and push it on descents. Crests go light, and dips add grip.
 - **Terrain:** dunes around the circuit and hills further out. The 3D views show them directly, and the top-down view shows them as hill-shading.
 
+## Graphics
+
+- **Lighting:** real-time sun shadows follow your car.
+- **Paint and environment:** reflective clear-coat paint, plus Bahrain flags that wave in the wind.
+- **Tyre effects:**
+  - Tyre smoke when you slide, spin the wheels or lock up.
+  - Sand dust when you go off.
+  - Skid marks laid on the asphalt.
+- **Exhaust and impacts:**
+  - Exhaust pops and flames when you lift at high revs.
+  - Sparks on wall hits and contact.
+- **Lights:** brake lights that glow, and headlight flares at night.
+- **Trackside:**
+  - Barrier banners ("Bahrain International Circuit", "Home of Motorsport in the Middle East", series names).
+  - 150/100/50 brake boards before the slow corners.
+
+## Replays
+
+Every race and time-trial session is recorded.
+- **Starting a replay:** choose **Watch replay** on the results screen, or **Replay** in the pause menu.
+- **Cameras:** trackside TV cameras zoom to follow the car and cut to the next camera as it passes. Chase and onboard views are also available.
+- **Controls:** ←/→ change car, C changes camera, Space pauses, ↑/↓ change speed, R restarts and Esc exits.
+
 ## Fun extras (Arcade)
 
 - **Nitro (Shift):** a big shove and a higher top speed while the bottle lasts. It refills slowly on its own and faster while drifting or in a slipstream. The N2O bar is on the dash.
@@ -70,20 +93,28 @@ Type **SAKHIR** in the garage (on a phone, tap the car's name 7 times) to unlock
 
 ## The cars
 
-Each car is a 3D model built at its real length, width and height.
-- **How the bodies are built:** each body is lofted from its own bonnet/deck line, sill line, plan-view width and roof profile. The sides have wheel arches cut into them. The glasshouse is a separate piece with A/B/C pillars and see-through glass, and the multi-spoke wheels turn and steer.
-- **What sets each car apart:**
-  - the Scirocco's low fastback, black grille bar, full-width light bar and roof spoiler;
-  - the FN2 Civic's one-box wedge with a windscreen starting far forward, triangle tail lights and roof spoiler;
-  - the 135i's long bonnet, set-back cabin, chrome kidneys, angel eyes and L-shaped tail lights;
-  - the TT's arched dome roof, single-frame grille and round fuel cap.
-- **Garage and top-down view:** the garage shows the selected car on a rotating turntable, and the top-down sprites are rendered from the same models.
-- **Paint:** each car comes in five factory colours.
+Each car is a race car, modelled at its real length, width and height and built to look like the cars that race at Sakhir.
+- **Scirocco Cup:**
+  - **Scirocco Cup 2010:** yellow with the Volkswagen sun strip, #01 on the bonnet, "Scirocco R-Cup" doors and a grey chequered-flag motif.
+  - **Sakhir Touring Cup #7:** pink, white and black.
+  - **Rising Blue #23.**
+- **Civic EG (K20 swap):** the hatch from the BIC 2000cc Challenge.
+  - **#14:** white with purple bumpers, skirts, mirrors and spoiler, the red "BIC 2000 CC Challenge" banner, yellow window numbers, a roof vent and gunmetal six-spoke wheels.
+- **BMW 135i E82 race car:** blacked-out kidneys, angel eyes, widened arches, splitter and a wing on stands.
+  - **Formido #509:** white with blue nose corners and a blue sweep along the flanks.
+- **Audi TT Cup:** white, red and black, with a big wing and a splitter.
+
+**What every race car has:**
+- **Bodywork:** lofted from its own bonnet line, sill line, width and roof profile. The wheel arches are cut in, and the glasshouse has pillars and see-through glass.
+- **Race kit:** a roll cage and bucket seat with harness, visible through the windows, plus tow straps, a front splitter and race wheels with red calipers.
+- **Paint:** glossy, with a clear coat that reflects the sky.
+- **Liveries:** painted onto the body, with canvas-drawn decals for sun strips, door and roof numbers, and sponsor text.
+- **Garage and top-down view:** pick from three liveries per car in the garage (shown on a 3D turntable). The top-down sprites are rendered from the same models.
 
 | | Layout | Box | Mass | Power | Weight F/R | Character |
 |---|---|---|---|---|---|---|
 | VW Scirocco 2.0 TSI | FWD | DSG | 1300 kg | 265 whp | 61/39 | Stable, understeers on power, near-instant shifts |
-| Honda Civic 2.0 NA | FWD | 6MT | 1200 kg | 255 whp | 61/39 | Sharpest turn-in, no turbo lag, little low-down torque |
+| Honda Civic EG (K20 swap) | FWD | 6MT | 1200 kg | 255 whp | 61/39 | Sharpest turn-in, no turbo lag, little low-down torque |
 | BMW 135i N54 | RWD | 6MT | 1450 kg | 245 whp | 52/48 | Good exit traction, steps out under aggressive throttle, part-throttle lag |
 | Audi TT 2.0 TFSI | FWD | DSG | 1250 kg | 262 whp | 60/40 | Scirocco-like, lighter and more willing to rotate |
 
@@ -130,6 +161,6 @@ node test/precompute.js scirocco   # re-run the line optimiser; prints JSON for 
 - `audio`: the sound engine.
 - `scenery`: everything drawn around the circuit.
 - `cars`: the top-down car drawings (fallback when WebGL is unavailable).
-- `models`: the 3D car models (lofted bodies, glasshouse, wheels, details, and the F2004 open-wheeler).
+- `models`: the 3D race-car models and liveries (lofted bodies, glasshouse, cage, wheels, decals, and the F2004 open-wheeler).
 - `view3d`: the terrain and the three.js scene: track, walls, stands, pit building, tower, palms, car models, cockpit, and the chase and cockpit cameras.
 - `ui`: the garage, game modes, assists, pit stops, HUD and rendering.
