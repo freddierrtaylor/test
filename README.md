@@ -2,6 +2,8 @@
 
 A racing game on the **Oasis / Inner Circuit at Bahrain International Circuit** (2.55 km, 11 turns), with a 3D chase camera, a first-person cockpit view and a top-down view. It's a single `index.html` page written in vanilla HTML/CSS/JS, with no build step and nothing to install.
 
+This prototype is the circuit part of **AFTERSHIFT**, a planned automotive discovery and collection game set in a fictionalised Bahrain. See [the concept](docs/aftershift-concept.md) and [the full game prompt](docs/aftershift-prompt.md).
+
 **Run it:** open `index.html` in a browser. It also works from `file://`. The 3D views use three.js from cdnjs. Without a connection or WebGL, the game stays top-down.
 
 ## Modes
